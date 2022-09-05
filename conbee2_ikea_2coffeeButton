@@ -1,0 +1,108 @@
+blueprint:
+  name: conbee2 , ikea 2 Button Coffee Remote
+  description: 'TRÅDFRI Kabelloser Dimmer, weiß zum Schalten und dimmen.
+
+    Kurzes antippen schaltet die Lampe auf die letzte Helligkeit an.
+
+    Helligkeit über Tasten mit langen festhalten einstellen.
+
+    '
+  domain: automation
+  input:
+    remote:
+      name: Remote
+      description: TRÅDFRI Kabelloser Dimmer
+      selector:
+        device:
+          integration: deconz
+          manufacturer: IKEA of Sweden
+          model: TRADFRI on/off switch
+          multiple: false
+    light:
+      name: Licht
+      description: Lichtkontrolle
+      selector:
+        target:
+          entity:
+            domain: light
+    force_brightness:
+      name: Helligkeit einschalten
+      description: 'Force the brightness to the set level below, when the "on" button
+        on the remote is pushed and lights turn on.
+
+        '
+      default: false
+      selector:
+        boolean: {}
+    brightness:
+      name: Helligkeit
+      description: Helligkeit beim Einschalten
+      default: 50
+      selector:
+        number:
+          min: 0.0
+          max: 100.0
+          mode: slider
+          step: 1.0
+          unit_of_measurement: '%'
+  source_url: https://gist.github.com/RalphRxx/6ed64042e7a26c501faf1ef14f0681e2
+mode: restart
+max_exceeded: silent
+variables:
+  force_brightness: !input force_brightness
+trigger:
+- platform: event
+  event_type: deconz_event
+  event_data:
+    device_id: !input remote
+action:
+- variables:
+    event: '{{ trigger.event.data.event }}'
+- choose:
+  - conditions:
+    - '{{ event == 1002 }}'
+    sequence:
+    - choose:
+      - conditions: '{{ force_brightness }}'
+        sequence:
+        - service: light.toggle
+          target: !input light
+          data:
+            transition: 1
+            brightness_pct: !input brightness
+      default:
+      - service: light.turn_on
+        target: !input light
+        data:
+          transition: 1
+  - conditions:
+    - '{{ event == 2002 }}'
+    sequence:
+    - service: light.turn_off
+      target: !input light
+      data:
+        transition: 1
+  - conditions:
+    - '{{ event == 1001 }}'
+    sequence:
+    - repeat:
+        count: 10
+        sequence:
+        - service: light.turn_on
+          target: !input light
+          data:
+            brightness_step_pct: 10
+            transition: 1
+        - delay: 1
+  - conditions:
+    - '{{ event == 2001 }}'
+    sequence:
+    - repeat:
+        count: 10
+        sequence:
+        - service: light.turn_on
+          target: !input light
+          data:
+            brightness_step_pct: -10
+            transition: 1
+        - delay: 1
