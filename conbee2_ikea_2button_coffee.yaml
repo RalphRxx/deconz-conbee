@@ -45,7 +45,7 @@ blueprint:
           mode: slider
           step: 1.0
           unit_of_measurement: '%'
-  source_url: https://gist.github.com/RalphRxx/6ed64042e7a26c501faf1ef14f0681e2
+  source_url: https://gist.github.com/RalphRxx/aeb08a0c9626ef6ef9507aef612e214e6ed230dc
 mode: restart
 max_exceeded: silent
 variables:
